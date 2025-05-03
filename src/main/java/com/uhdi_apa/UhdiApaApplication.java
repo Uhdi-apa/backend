@@ -1,4 +1,4 @@
-package com.example.uhdi_apa;
+package com.uhdi_apa;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

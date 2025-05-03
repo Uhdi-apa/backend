@@ -1,4 +1,4 @@
-package com.example.uhdi_apa;
+package com.uhdi_apa;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
