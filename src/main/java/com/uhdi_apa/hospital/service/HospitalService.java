@@ -1,14 +1,26 @@
 package com.uhdi_apa.hospital.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.uhdi_apa.base.api.error.HospitalErrorCode;
+import com.uhdi_apa.base.api.error.SymptomErrorCode;
 import com.uhdi_apa.base.api.exception.RestApiException;
+import com.uhdi_apa.hospital.converter.FindHospitalConverter;
 import com.uhdi_apa.hospital.converter.GetHospitalDetailConverter;
+import com.uhdi_apa.hospital.dto.FindHospitalDto;
 import com.uhdi_apa.hospital.dto.GetHospitalDetailDto;
+import com.uhdi_apa.hospital.model.Department;
 import com.uhdi_apa.hospital.model.Hospital;
+import com.uhdi_apa.hospital.model.HospitalDepartment;
+import com.uhdi_apa.hospital.model.Symptom;
+import com.uhdi_apa.hospital.model.SymptomDepartment;
+import com.uhdi_apa.hospital.repository.HospitalDepartmentRepository;
 import com.uhdi_apa.hospital.repository.HospitalRepository;
+import com.uhdi_apa.hospital.repository.SymptomRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +30,12 @@ import lombok.RequiredArgsConstructor;
 public class HospitalService {
 
 	private final HospitalRepository hospitalRepository;
+
+	private final HospitalDepartmentRepository hospitalDepartmentRepository;
+
+	private final SymptomRepository symptomRepository;
+
+	private final GeminiService geminiService;
 
 	public GetHospitalDetailDto.Response getHospitalDetail(GetHospitalDetailDto.Parameter parameter) {
 
@@ -42,5 +60,37 @@ public class HospitalService {
 		Double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
 		return 6371.0 * c;
+	}
+
+	public FindHospitalDto.Response findHospitalBySymptoms(FindHospitalDto.Parameter parameter) {
+		String forFirstAidGuideLinePrompt = parameter.getPrompt()
+			+ " 지금 이런 증상이 있는데 지금 당장 할 수 있는 응급조치법을 3줄 이내로 간단하게 알려줘";
+		String firstAidGuideLine = geminiService.getContents(forFirstAidGuideLinePrompt);
+
+		String forSymptomKeywordPrompt = parameter.getPrompt()
+			+ " 지금 이런 증상이 있는데 이걸 열상, 파상품, 절상, 절단상, 타박상, 찰과상, 파열상, 골절상, 동상, 화상 "
+			+ "여기 있는 증상 중 지금 상황에 맞는 키워드를 하나 골라서 다른 대답 없이 키워드로만 대답해줘";
+		String symptomKeyword = geminiService.getContents(forSymptomKeywordPrompt).trim();
+
+		// 1. 키워드로 Symptom 조회
+		Symptom symptom = symptomRepository.findByKeyword(symptomKeyword)
+			.orElseThrow(() -> new RestApiException(SymptomErrorCode.NOT_EXIST_SYMPTOM));
+
+		// 2. Symptom → SymptomDepartment → Department 추출
+		List<Department> departments = symptom.getSymptomDepartments().stream()
+			.map(SymptomDepartment::getDepartment)
+			.distinct()
+			.collect(Collectors.toList());
+
+		// 3. Department → HospitalDepartment → Hospital 추출
+		List<Hospital> hospitals = hospitalDepartmentRepository.findByDepartmentIn(departments)
+			.orElseThrow(()-> new RestApiException(HospitalErrorCode.NOT_EXIST_HOSPITAL))
+			.stream()
+			.map(HospitalDepartment::getHospital)
+			.distinct()
+			.collect(Collectors.toList());
+
+		return FindHospitalConverter.toResponse(firstAidGuideLine,hospitals,parameter.getLatitude(),parameter.getLongitude());
+
 	}
 }
