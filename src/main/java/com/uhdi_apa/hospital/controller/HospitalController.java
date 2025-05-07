@@ -30,11 +30,11 @@ public class HospitalController {
 	@GetMapping("/details")
 	public ApiResponse<GetHospitalDetailDto.Response> getCandidateMatchVote(
 		@RequestParam("hospital-id") Long hospitalId,
-		@RequestParam("longitude") Double longitude,
-		@RequestParam("latitude") Double latitude
+		@RequestParam("latitude") Double latitude,
+		@RequestParam("longitude") Double longitude
 	) {
 		GetHospitalDetailDto.Parameter parameter =
-			GetHospitalDetailConverter.toParameter(hospitalId, longitude, latitude);
+			GetHospitalDetailConverter.toParameter(hospitalId, latitude, longitude);
 
 		GetHospitalDetailDto.Response response =
 			hospitalService.getHospitalDetail(parameter);
