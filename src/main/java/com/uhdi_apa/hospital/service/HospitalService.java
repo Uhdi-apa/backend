@@ -64,11 +64,13 @@ public class HospitalService {
 
 	public FindHospitalDto.Response findHospitalBySymptoms(FindHospitalDto.Parameter parameter) {
 		String forFirstAidGuideLinePrompt = parameter.getPrompt()
-			+ " 지금 이런 증상이 있는데 지금 당장 할 수 있는 응급조치법을 3줄 이내로 간단하게 알려줘";
+			+ " 지금 이런 증상이 있는데 지금 당장 할 수 있는 응급조치법을 영어로 1,2,3 나눠서 간단하게 알려줘"
+			+ ", 볼드체같은 강조 빼고 평문으로 해줘"
+			+ ", 앞에 'Okay, here are the immediate first aid steps you should take' 같은 서론 없이 응급조치법만 알려줘";
 		String firstAidGuideLine = geminiService.getContents(forFirstAidGuideLinePrompt);
 
 		String forSymptomKeywordPrompt = parameter.getPrompt()
-			+ " 지금 이런 증상이 있는데 이걸 열상, 파상품, 절상, 절단상, 타박상, 찰과상, 파열상, 골절상, 동상, 화상 "
+			+ " 지금 이런 증상이 있는데 이걸 lacerations, tetanus, incisions, cuts, bruises, abrasions, ruptures, fractures, frostbite, burns "
 			+ "여기 있는 증상 중 지금 상황에 맞는 키워드를 하나 골라서 다른 대답 없이 키워드로만 대답해줘";
 		String symptomKeyword = geminiService.getContents(forSymptomKeywordPrompt).trim();
 

@@ -82,7 +82,6 @@ public class GeminiChatDto {
 			private int candidate_count;
 			private int max_output_tokens;
 			private double temperature;
-
 		}
 
 		public ChatRequest(String prompt) {
